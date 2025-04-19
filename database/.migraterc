@@ -1,0 +1,15 @@
+{
+  "migrationsDir": "database/migrations",
+  "seedsDir": "database/seeds",
+  "migrationTableName": "migrations_history",
+  "autoRun": false,
+  "validateOnRun": true,
+  "backup": {
+    "enabled": true,
+    "directory": "database/backups"
+  },
+  "logging": {
+    "enabled": true,
+    "logLevel": "info"
+  }
+}
