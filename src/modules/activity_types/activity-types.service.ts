@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
-import { ActivityType } from './entities/activity-type.entity';
+import { ActivityType } from './activity-types-entity';
 import { CreateActivityTypeDto } from './dto/create-activity-type.dto';
 import { UpdateActivityTypeDto } from './dto/update-activity-type.dto';
 import { QueryActivityTypeDto } from './dto/query-activity-type.dto';
@@ -26,10 +26,12 @@ export class ActivityTypesService {
 
   /**
    * 创建活动类型
-   * @param createActivityTypeDto 
-   * @returns 
+   * @param createActivityTypeDto
+   * @returns
    */
-  async create(createActivityTypeDto: CreateActivityTypeDto): Promise<ActivityType> {
+  async create(
+    createActivityTypeDto: CreateActivityTypeDto,
+  ): Promise<ActivityType> {
     try {
       // 检查编码是否已存在
       const existingType = await this.activityTypeRepository.findOne({
@@ -37,11 +39,15 @@ export class ActivityTypesService {
       });
 
       if (existingType) {
-        throw new BadRequestException(`活动类型编码 ${createActivityTypeDto.code} 已存在`);
+        throw new BadRequestException(
+          `活动类型编码 ${createActivityTypeDto.code} 已存在`,
+        );
       }
 
       // 创建活动类型
-      const activityType = this.activityTypeRepository.create(createActivityTypeDto);
+      const activityType = this.activityTypeRepository.create(
+        createActivityTypeDto,
+      );
       return await this.activityTypeRepository.save(activityType);
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -54,8 +60,8 @@ export class ActivityTypesService {
 
   /**
    * 分页查询活动类型列表
-   * @param queryParams 
-   * @returns 
+   * @param queryParams
+   * @returns
    */
   async findAll(queryParams: QueryActivityTypeDto = {}) {
     try {
@@ -103,7 +109,7 @@ export class ActivityTypesService {
 
   /**
    * 获取所有活动类型（不分页）
-   * @returns 
+   * @returns
    */
   async findAllList(): Promise<ActivityType[]> {
     try {
@@ -121,8 +127,8 @@ export class ActivityTypesService {
 
   /**
    * 根据ID查询活动类型详情
-   * @param id 
-   * @returns 
+   * @param id
+   * @returns
    */
   async findOne(id: string): Promise<ActivityType> {
     try {
@@ -146,8 +152,8 @@ export class ActivityTypesService {
 
   /**
    * 根据编码查询活动类型
-   * @param code 
-   * @returns 
+   * @param code
+   * @returns
    */
   async findByCode(code: string): Promise<ActivityType | null> {
     try {
@@ -155,30 +161,41 @@ export class ActivityTypesService {
         where: { code },
       });
     } catch (error) {
-      this.logger.error(`根据编码查询活动类型失败: ${error.message}`, error.stack);
+      this.logger.error(
+        `根据编码查询活动类型失败: ${error.message}`,
+        error.stack,
+      );
       throw new DatabaseException('查询', '活动类型', error);
     }
   }
 
   /**
    * 更新活动类型
-   * @param id 
-   * @param updateActivityTypeDto 
-   * @returns 
+   * @param id
+   * @param updateActivityTypeDto
+   * @returns
    */
-  async update(id: string, updateActivityTypeDto: UpdateActivityTypeDto): Promise<ActivityType> {
+  async update(
+    id: string,
+    updateActivityTypeDto: UpdateActivityTypeDto,
+  ): Promise<ActivityType> {
     try {
       // 查询要更新的活动类型是否存在
       const activityType = await this.findOne(id);
 
       // 如果更新编码，检查编码是否与其他活动类型冲突
-      if (updateActivityTypeDto.code && updateActivityTypeDto.code !== activityType.code) {
+      if (
+        updateActivityTypeDto.code &&
+        updateActivityTypeDto.code !== activityType.code
+      ) {
         const existingType = await this.activityTypeRepository.findOne({
           where: { code: updateActivityTypeDto.code, id: Not(activityType.id) },
         });
 
         if (existingType) {
-          throw new BadRequestException(`活动类型编码 ${updateActivityTypeDto.code} 已存在`);
+          throw new BadRequestException(
+            `活动类型编码 ${updateActivityTypeDto.code} 已存在`,
+          );
         }
       }
 
@@ -186,7 +203,10 @@ export class ActivityTypesService {
       Object.assign(activityType, updateActivityTypeDto);
       return await this.activityTypeRepository.save(activityType);
     } catch (error) {
-      if (error instanceof ResourceNotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof ResourceNotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.logger.error(`更新活动类型失败: ${error.message}`, error.stack);
@@ -196,23 +216,29 @@ export class ActivityTypesService {
 
   /**
    * 删除活动类型
-   * @param id 
+   * @param id
    */
   async remove(id: string): Promise<void> {
     try {
       // 查询要删除的活动类型是否存在
       const activityType = await this.findOne(id);
-      
+
       // 检查活动类型是否被活动引用
-      const isUsed = activityType.activities && activityType.activities.length > 0;
+      const isUsed =
+        activityType.activities && activityType.activities.length > 0;
       if (isUsed) {
-        throw new BadRequestException(`活动类型 ${activityType.name} 已被活动引用，无法删除`);
+        throw new BadRequestException(
+          `活动类型 ${activityType.name} 已被活动引用，无法删除`,
+        );
       }
 
       // 执行软删除
-      await this.activityTypeRepository.softDelete(activityType.id);
+      await this.activityTypeRepository.softDelete({ id: activityType.id });
     } catch (error) {
-      if (error instanceof ResourceNotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof ResourceNotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.logger.error(`删除活动类型失败: ${error.message}`, error.stack);

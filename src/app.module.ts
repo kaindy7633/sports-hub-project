@@ -23,7 +23,7 @@ import {
 } from './config/configuration';
 import { RolesModule } from './modules/roles/roles.module';
 import { ManagersModule } from './modules/managers/managers.module';
-import { ActivityTypesModule } from './modules/activity-types/activity-types.module';
+import { ActivityTypesModule } from './modules/activity_types/activity-types.module';
 import { VenuesModule } from './modules/venues/venues.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { MessagesModule } from './modules/messages/messages.module';
