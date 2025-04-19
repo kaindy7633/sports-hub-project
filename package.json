@@ -1,8 +1,8 @@
 {
-  "name": "server",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "sport-hub-project",
+  "version": "0.1.0",
+  "description": "SportsHub项目后端系统",
+  "author": "阿振sc(kaindy7633@gmail.com)",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
