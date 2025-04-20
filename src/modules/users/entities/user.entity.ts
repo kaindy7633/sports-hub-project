@@ -1,3 +1,4 @@
+// src/modules/users/entities/user.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,6 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { UserAuth } from './user-auth.entity';
 import { UserRole } from './user-role.entity';
+import { UserTeam } from '../../teams/entities/user-team.entity';
 import { BigIntTransformer } from '../../../common/transformers/bigint.transformer';
 
 @Entity('users')
@@ -130,4 +132,8 @@ export class User {
 
   @OneToMany(() => UserRole, (userRole) => userRole.user)
   roles: UserRole[];
+
+  // 添加与团队的关联
+  @OneToMany(() => UserTeam, (userTeam) => userTeam.user)
+  teams: UserTeam[];
 }

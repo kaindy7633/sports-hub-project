@@ -1,3 +1,4 @@
+// src/modules/teams/entities/team.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,15 +8,23 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserTeam } from './user-team.entity';
+import { BigIntTransformer } from '../../../common/transformers/bigint.transformer';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity('teams')
 export class Team {
-  @ApiProperty({
-    description: '团队ID',
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  @ApiProperty({ description: '团队ID', example: '1' })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
+  id: bigint;
+
+  @ApiProperty({ description: '业务团队ID', example: '100001' })
+  @Column({
+    type: 'bigint',
+    transformer: new BigIntTransformer(),
+    unique: true,
   })
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  team_id: string;
 
   @ApiProperty({ description: '团队名称', example: '篮球俱乐部' })
   @Column({ length: 100 })
@@ -37,19 +46,39 @@ export class Team {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @ApiProperty({ description: '团队成员数量', example: 10 })
-  @Column({ default: 0 })
-  memberCount: number;
+  @ApiProperty({ description: '队长ID', example: '1' })
+  @Column({ type: 'bigint' })
+  leader_id: bigint;
 
-  @ApiProperty({ description: '团队活动数量', example: 5 })
+  @ApiProperty({ description: '最大成员数', example: 20 })
   @Column({ default: 0 })
-  activityCount: number;
+  max_members: number;
+
+  @ApiProperty({ description: '当前成员数', example: 10 })
+  @Column({ default: 0 })
+  current_members: number;
+
+  @ApiProperty({ description: '状态：0-解散，1-正常', example: 1 })
+  @Column({ type: 'smallint', default: 1 })
+  status: number;
 
   @ApiProperty({ description: '创建时间' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: '更新时间' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
+
+  @ApiProperty({ description: '删除时间', required: false })
+  @Column({ nullable: true })
+  deleted_at: Date;
+
+  // 关联用户-团队中间表
+  @OneToMany(() => UserTeam, (userTeam) => userTeam.team)
+  userTeams: UserTeam[];
+
+  // 关联活动
+  @OneToMany(() => Activity, (activity) => activity.team)
+  activities: Activity[];
 }
