@@ -12,7 +12,7 @@ export interface TokenPayload {
 @Injectable()
 export class TokenService {
   private readonly jwtSecret: string;
-  private readonly jwtExpirationTime: number;
+  private readonly jwtExpirationTime: string | number;
 
   constructor(private configService: ConfigService) {
     const secret = this.configService.get<string>('jwt.secret');
@@ -20,9 +20,9 @@ export class TokenService {
       throw new Error('JWT secret is not configured');
     }
     this.jwtSecret = secret;
+    // 可以接受字符串或数字类型的过期时间
     this.jwtExpirationTime =
-      this.configService.get<number>('jwt.expirationTime') ?? 3600;
-    this.configService.get<number>('jwt.expirationTime');
+      this.configService.get<string | number>('jwt.expirationTime') ?? '24h';
   }
 
   /**
@@ -31,8 +31,8 @@ export class TokenService {
    * @returns 生成的JWT令牌
    */
   generateToken(payload: TokenPayload): string {
-    return jwt.sign(payload, this.jwtSecret, {
-      expiresIn: `${this.jwtExpirationTime}s`,
+    return (jwt as any).sign(payload, this.jwtSecret, {
+      expiresIn: this.jwtExpirationTime,
     });
   }
 
@@ -62,10 +62,4 @@ export class TokenService {
     // 生成新令牌
     return this.generateToken(payload as TokenPayload);
   }
-
-  // 修改 JWT 签名选项，将过期时间设置为 24 小时
-  private readonly jwtSignOptions: jwt.SignOptions = {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
-    expiresIn: '24h', // 修改为 24 小时
-  };
 }

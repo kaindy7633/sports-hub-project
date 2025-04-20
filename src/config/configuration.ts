@@ -10,7 +10,7 @@ export const databaseConfig = registerAs('database', () => ({
 
 export const jwtConfig = registerAs('jwt', () => ({
   secret: process.env.JWT_SECRET,
-  expirationTime: process.env.JWT_EXPIRATION_TIME || 3600,
+  expirationTime: process.env.JWT_EXPIRATION_TIME || '24h',
 }));
 
 export const appConfig = registerAs('app', () => ({
