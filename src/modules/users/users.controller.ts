@@ -8,10 +8,11 @@ import {
   Param,
   Delete,
   Query,
-  ParseIntPipe,
+  HttpStatus,
   UseGuards,
   Logger,
   BadRequestException,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -164,38 +165,53 @@ export class UsersController {
     return await this.usersService.findOne(userId);
   }
 
-  @Patch(':userId')
+  @Patch(':id')
   @ApiOperation({ summary: '更新用户信息' })
-  @ApiParam({ name: 'userId', description: '业务用户ID' })
-  @ApiResponse({ status: 200, description: '用户更新成功' })
-  @ApiResponse({ status: 404, description: '用户不存在' })
+  @ApiResponse({ status: HttpStatus.OK, description: '更新成功' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '用户不存在' })
   @ApiResponse({
-    status: 403,
-    description: '权限不足，只能更新自己的账号或需要管理员权限',
+    status: HttpStatus.FORBIDDEN,
+    description: '没有权限执行此操作',
   })
   async update(
-    @Param('userId') userId: string,
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @CurrentUser() currentUser: User,
+    @Request() req,
   ) {
-    // 检查权限：用户可以更新自己的账号，或者管理员可以更新任何账号
-    const isSelfUpdate = currentUser.user_id === userId;
-    const isAdmin = this.usersService.isAdmin(currentUser);
+    // 获取当前登录用户信息
+    const currentUserId = req.user.userId;
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isSelfUpdate && !isAdmin) {
-      this.logger.warn(
-        `用户 ${currentUser.username} 尝试更新其他用户(${userId})但权限不足`,
-      );
-      throw new ForbiddenException('您只能更新自己的账号，或需要管理员权限');
+    // 检查是否是管理员或用户自己
+    // 使用字符串比较确保类型一致
+    const isSelf = currentUserId.toString() === id.toString();
+
+    // 如果不是管理员且不是自己，则拒绝访问
+    if (!isAdmin && !isSelf) {
+      throw new ForbiddenException('没有权限更新其他用户的资料');
     }
 
-    if (isSelfUpdate) {
-      this.logger.log(`用户 ${currentUser.username} 更新自己的账号信息`);
-    } else {
-      this.logger.log(`管理员 ${currentUser.username} 更新用户 ${userId}`);
+    // 如果是普通用户修改自己的信息，可能需要限制某些字段的修改
+    if (!isAdmin && isSelf) {
+      // 可以在这里限制普通用户不能修改的字段，例如角色、状态等
+      // 例如：删除 updateUserDto 中的 role 和 status 字段
+      if (updateUserDto.role !== undefined) {
+        delete updateUserDto.role;
+      }
+      if (updateUserDto.status !== undefined) {
+        delete updateUserDto.status;
+      }
+      // 可以添加其他需要限制的字段
     }
 
-    return await this.usersService.update(userId, updateUserDto);
+    // 返回更新结果
+    const result = await this.usersService.update(id, updateUserDto);
+
+    return {
+      code: 200,
+      data: result,
+      msg: '更新用户信息成功',
+    };
   }
 
   @Delete(':userId')

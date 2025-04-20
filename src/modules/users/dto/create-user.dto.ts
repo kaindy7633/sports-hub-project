@@ -6,8 +6,12 @@ import {
   MaxLength,
   IsEnum,
   IsDateString,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+// 导入新创建的枚举
+import { UserRole } from '../enums/user-role.enum';
+import { UserStatus } from '../enums/user-role.enum';
 
 enum Gender {
   UNKNOWN = 0,
@@ -120,4 +124,17 @@ export class CreateUserDto {
   @IsOptional()
   @IsDateString({}, { message: '出生日期格式不正确' })
   birthday?: Date;
+
+  // 添加角色属性
+  @ApiProperty({ description: '用户角色', required: false, enum: UserRole })
+  @IsOptional()
+  @IsEnum(UserRole, { message: '无效的角色值' })
+  role?: string;
+
+  // 添加状态属性
+  @ApiProperty({ description: '用户状态', required: false, enum: UserStatus })
+  @IsOptional()
+  @IsNumber()
+  @IsEnum(UserStatus, { message: '无效的状态值' })
+  status?: number;
 }
