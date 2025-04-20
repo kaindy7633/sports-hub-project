@@ -24,8 +24,9 @@ import { UpdateActivityTypeDto } from './dto/update-activity-type.dto';
 import { QueryActivityTypeDto } from './dto/query-activity-type.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('activity-types')
+@ApiTags('活动类型(activity-types)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('activity-types')
@@ -45,13 +46,34 @@ export class ActivityTypesController {
   }
 
   @Get()
+  @Roles('admin')
   @ApiOperation({ summary: '分页查询活动类型列表' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回活动类型列表',
   })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   findAll(@Query() query: QueryActivityTypeDto) {
-    return this.activityTypesService.findAll(query);
+    // 确保使用默认值
+    const pageNum = query.pageNum || PAGINATION.DEFAULT_PAGE_NUM;
+    const pageSize = query.pageSize || PAGINATION.DEFAULT_PAGE_SIZE;
+
+    return this.activityTypesService.findAll({
+      ...query,
+      pageNum,
+      pageSize,
+    });
   }
 
   @Get('all')

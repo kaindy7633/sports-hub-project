@@ -32,8 +32,9 @@ import {
 } from './dto/role-response.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('roles')
+@ApiTags('角色(roles)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles('admin')
@@ -55,6 +56,18 @@ export class RolesController {
 
   @Get()
   @ApiOperation({ summary: '分页查询角色列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回角色列表',

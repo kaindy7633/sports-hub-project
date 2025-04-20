@@ -14,6 +14,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { QueryUserDto } from './dto/query-user.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -24,8 +25,9 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('users')
+@ApiTags('用户(users)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles('admin', 'manager')
@@ -44,25 +46,23 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: '分页查询用户列表' })
   @ApiResponse({ status: 200, description: '返回分页用户列表' })
-  @ApiQuery({ name: 'pageNum', description: '页码', example: 1 })
-  @ApiQuery({ name: 'pageSize', description: '每页条数', example: 10 })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiQuery({ name: 'username', description: '用户名', required: false })
   @ApiQuery({ name: 'phone', description: '手机号', required: false })
   @ApiQuery({ name: 'email', description: '邮箱', required: false })
-  async findAll(
-    @Query('pageNum') pageNum: number,
-    @Query('pageSize') pageSize: number,
-    @Query('username') username?: string,
-    @Query('phone') phone?: string,
-    @Query('email') email?: string,
-  ) {
-    return await this.usersService.findAll({
-      pageNum: +pageNum,
-      pageSize: +pageSize,
-      username,
-      phone,
-      email,
-    });
+  async findAll(@Query() query: QueryUserDto) {
+    return await this.usersService.findAll(query);
   }
 
   @Get('list')
@@ -71,11 +71,8 @@ export class UsersController {
   @ApiQuery({ name: 'username', description: '用户名', required: false })
   @ApiQuery({ name: 'phone', description: '手机号', required: false })
   @ApiQuery({ name: 'email', description: '邮箱', required: false })
-  async findAllList(
-    @Query('username') username?: string,
-    @Query('phone') phone?: string,
-    @Query('email') email?: string,
-  ) {
+  async findAllList(@Query() query: Partial<QueryUserDto>) {
+    const { username, phone, email } = query;
     return await this.usersService.findAllList({ username, phone, email });
   }
 

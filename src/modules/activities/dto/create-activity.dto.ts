@@ -13,6 +13,7 @@ import {
   IsDecimal,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ACTIVITY_STATUS } from '../../../common/constants';
 
 export class CreateActivityDto {
   @ApiProperty({ description: '活动标题', example: '周末篮球赛' })
@@ -77,13 +78,13 @@ export class CreateActivityDto {
 
   @ApiProperty({
     description: '状态：0-草稿，1-已发布，2-未开始，3-进行中，4-已结束',
-    example: 0,
-    default: 0,
+    example: ACTIVITY_STATUS.DRAFT,
+    default: ACTIVITY_STATUS.DRAFT,
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: '状态必须是整数' })
   @Min(0, { message: '状态不能小于0' })
   @Max(4, { message: '状态不能大于4' })
-  status?: number = 0;
+  status?: number = ACTIVITY_STATUS.DRAFT;
 }

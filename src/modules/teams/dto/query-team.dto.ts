@@ -3,19 +3,15 @@ import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PAGINATION } from '../../../common/constants';
 
-export class QueryActivityTypeDto {
-  @ApiProperty({ description: '活动类型名称', required: false })
+export class QueryTeamDto {
+  @ApiProperty({ description: '团队名称', required: false })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ description: '活动类型编码', required: false })
+  @ApiProperty({ description: '状态', required: false })
   @IsOptional()
-  @IsString()
-  code?: string;
-
-  @ApiProperty({ description: '状态：0-禁用，1-启用', required: false })
-  @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   status?: number;

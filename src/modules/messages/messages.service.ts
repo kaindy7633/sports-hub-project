@@ -15,6 +15,7 @@ import { ResourceNotFoundException } from '../../common/exceptions/resource-not-
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { InsufficientPermissionException } from '../../common/exceptions/insufficient-permission.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION } from '../../common/constants';
 
 @Injectable()
 export class MessagesService {
@@ -68,8 +69,8 @@ export class MessagesService {
         receiver_id,
         type,
         read_status,
-        pageNum = 1,
-        pageSize = 10,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
       } = queryParams;
 
       const skip = (pageNum - 1) * pageSize;

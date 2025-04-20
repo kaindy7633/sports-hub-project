@@ -10,10 +10,12 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { CreateManagerDto } from './dto/create-manager.dto';
 import { UpdateManagerDto } from './dto/update-manager.dto';
+import { QueryManagerDto } from './dto/query-manager.dto';
 import { Manager } from './entities/manager.entity';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { DatabaseException } from '../../common/exceptions/database.exception';
+import { PAGINATION, STATUS } from '../../common/constants';
 
 @Injectable()
 export class ManagersService {
@@ -70,34 +72,107 @@ export class ManagersService {
   }
 
   /**
-   * 查询所有管理员
+   * 查询管理员列表
+   * @param queryParams 查询参数
    * @returns 管理员列表
    */
-  async findAll(): Promise<Manager[]> {
-    // 使用select选项排除敏感字段
-    return await this.managerRepository.find({
-      select: {
-        id: true,
-        manager_id: true,
-        username: true,
-        parent_id: true,
-        nick_name: true,
-        real_name: true,
-        avatar: true,
-        phone: true,
-        email: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-      order: { created_at: 'DESC' },
-    });
+  async findAll(queryParams: QueryManagerDto = {}) {
+    try {
+      const {
+        username,
+        nick_name,
+        real_name,
+        phone,
+        email,
+        status = STATUS.ENABLED,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
+      } = queryParams;
+
+      const skip = (pageNum - 1) * pageSize;
+
+      // 构建查询条件
+      const queryBuilder = this.managerRepository.createQueryBuilder('manager');
+
+      // 排除敏感字段
+      queryBuilder.select([
+        'manager.id',
+        'manager.manager_id',
+        'manager.username',
+        'manager.parent_id',
+        'manager.nick_name',
+        'manager.real_name',
+        'manager.avatar',
+        'manager.phone',
+        'manager.email',
+        'manager.status',
+        'manager.created_at',
+        'manager.updated_at',
+      ]);
+
+      // 添加查询条件
+      if (username) {
+        queryBuilder.andWhere('manager.username LIKE :username', {
+          username: `%${username}%`,
+        });
+      }
+
+      if (nick_name) {
+        queryBuilder.andWhere('manager.nick_name LIKE :nick_name', {
+          nick_name: `%${nick_name}%`,
+        });
+      }
+
+      if (real_name) {
+        queryBuilder.andWhere('manager.real_name LIKE :real_name', {
+          real_name: `%${real_name}%`,
+        });
+      }
+
+      if (phone) {
+        queryBuilder.andWhere('manager.phone LIKE :phone', {
+          phone: `%${phone}%`,
+        });
+      }
+
+      if (email) {
+        queryBuilder.andWhere('manager.email LIKE :email', {
+          email: `%${email}%`,
+        });
+      }
+
+      if (status !== undefined) {
+        queryBuilder.andWhere('manager.status = :status', { status });
+      }
+
+      // 只查询未删除的记录
+      queryBuilder.andWhere('manager.deleted_at IS NULL');
+
+      // 获取总数
+      const total = await queryBuilder.getCount();
+
+      // 分页查询
+      const managers = await queryBuilder
+        .orderBy('manager.created_at', 'DESC')
+        .skip(skip)
+        .take(pageSize)
+        .getMany();
+
+      return {
+        list: managers,
+        total,
+        pageNum,
+        pageSize,
+      };
+    } catch (error) {
+      this.logger.error(`查询管理员列表失败: ${error.message}`, error.stack);
+      throw new DatabaseException('查询', '管理员列表', error);
+    }
   }
 
   /**
    * 根据内部ID查询管理员 (仅内部使用)
-   * @param id 内部管理员ID
+   * @param id 内部ID
    * @returns 管理员信息
    */
   private async findById(id: bigint): Promise<Manager> {
@@ -131,7 +206,6 @@ export class ManagersService {
         throw new ResourceNotFoundException('管理员', managerId);
       }
 
-      // 将原始查询结果转换为实体对象
       // 将原始查询结果转换为Manager实体对象并返回
       return Object.assign(new Manager(), manager);
     } catch (error) {

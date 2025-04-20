@@ -13,6 +13,7 @@ import { QueryActivityTypeDto } from './dto/query-activity-type.dto';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION } from '../../common/constants';
 
 @Injectable()
 export class ActivityTypesService {
@@ -65,7 +66,14 @@ export class ActivityTypesService {
    */
   async findAll(queryParams: QueryActivityTypeDto = {}) {
     try {
-      const { name, code, status, pageNum = 1, pageSize = 10 } = queryParams;
+      const {
+        name,
+        code,
+        status,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
+      } = queryParams;
+
       const skip = (pageNum - 1) * pageSize;
 
       // 构建查询条件

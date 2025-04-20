@@ -7,19 +7,24 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
+  HttpStatus,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { QueryTeamDto } from './dto/query-team.dto';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('teams')
+@ApiTags('团队(teams)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles('admin', 'manager')
@@ -36,10 +41,22 @@ export class TeamsController {
   }
 
   @Get()
-  @ApiOperation({ summary: '获取所有团队' })
-  @ApiResponse({ status: 200, description: '返回所有团队列表' })
-  async findAll() {
-    return await this.teamsService.findAll();
+  @ApiOperation({ summary: '分页查询团队列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: '返回团队列表' })
+  async findAll(@Query() query: QueryTeamDto) {
+    return await this.teamsService.findAll(query);
   }
 
   @Get(':id')

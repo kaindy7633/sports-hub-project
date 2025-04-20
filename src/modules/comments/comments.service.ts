@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
@@ -15,6 +9,7 @@ import { ResourceNotFoundException } from '../../common/exceptions/resource-not-
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { InsufficientPermissionException } from '../../common/exceptions/insufficient-permission.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION } from '../../common/constants';
 
 @Injectable()
 export class CommentsService {
@@ -78,8 +73,8 @@ export class CommentsService {
         user_id,
         parent_id,
         status,
-        pageNum = 1,
-        pageSize = 10,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
       } = queryParams;
 
       const skip = (pageNum - 1) * pageSize;

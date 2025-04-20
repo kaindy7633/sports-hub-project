@@ -6,7 +6,7 @@ import { LoginManagerDto } from './dto/login-manager.dto';
 import { TokenService } from '../../core/token/token.service';
 import * as crypto from 'crypto';
 
-@ApiTags('admin-auth')
+@ApiTags('管理员鉴权(admin-auth)')
 @Controller('admin/auth')
 export class AdminAuthController {
   constructor(

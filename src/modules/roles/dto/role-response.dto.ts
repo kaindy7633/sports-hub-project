@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PAGINATION } from '../../../common/constants';
 
 export class RoleResponseDto {
   @ApiProperty({ description: '角色ID', example: '1' })
@@ -38,9 +39,15 @@ export class PaginatedRoleResponseDto {
   @ApiProperty({ description: '总记录数', example: 100 })
   total: number;
 
-  @ApiProperty({ description: '当前页码', example: 1 })
+  @ApiProperty({
+    description: '当前页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+  })
   pageNum: number;
 
-  @ApiProperty({ description: '每页条数', example: 10 })
+  @ApiProperty({
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+  })
   pageSize: number;
 }

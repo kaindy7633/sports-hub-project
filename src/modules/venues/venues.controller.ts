@@ -24,8 +24,9 @@ import { UpdateVenueDto } from './dto/update-venue.dto';
 import { QueryVenueDto } from './dto/query-venue.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('venues')
+@ApiTags('场所(venues)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('venues')
@@ -46,6 +47,18 @@ export class VenuesController {
 
   @Get()
   @ApiOperation({ summary: '分页查询场地列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回场地列表',

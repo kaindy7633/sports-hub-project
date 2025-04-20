@@ -25,8 +25,9 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { QueryMessageDto } from './dto/query-message.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('messages')
+@ApiTags('消息(messages)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('messages')
@@ -48,6 +49,18 @@ export class MessagesController {
 
   @Get()
   @ApiOperation({ summary: '分页查询消息列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回消息列表',
@@ -58,6 +71,18 @@ export class MessagesController {
 
   @Get('inbox')
   @ApiOperation({ summary: '获取我的收件箱' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回收件箱消息列表',
@@ -69,6 +94,18 @@ export class MessagesController {
 
   @Get('outbox')
   @ApiOperation({ summary: '获取我的发件箱' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回发件箱消息列表',
@@ -120,7 +157,10 @@ export class MessagesController {
   @ApiParam({ name: 'messageId', description: '业务消息ID' })
   @ApiResponse({ status: HttpStatus.OK, description: '消息删除成功' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '消息不存在' })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: '没有权限删除该消息' })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: '没有权限删除该消息',
+  })
   remove(@Param('messageId') messageId: string, @Request() req) {
     const userId = req.user.userId;
     const isAdmin = req.user.role === 'admin';

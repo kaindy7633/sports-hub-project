@@ -13,6 +13,7 @@ import { QueryVenueDto } from './dto/query-venue.dto';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION, STATUS } from '../../common/constants';
 
 @Injectable()
 export class VenuesService {
@@ -51,16 +52,18 @@ export class VenuesService {
    * @param queryParams
    * @returns
    */
+  // 只修改 findAll 方法部分
   async findAll(queryParams: QueryVenueDto = {}) {
     try {
       const {
         name,
         address,
         contact_phone,
-        status,
-        pageNum = 1,
-        pageSize = 10,
+        status = STATUS.ENABLED,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
       } = queryParams;
+
       const skip = (pageNum - 1) * pageSize;
 
       // 构建查询条件

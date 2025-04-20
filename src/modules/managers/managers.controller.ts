@@ -9,7 +9,7 @@ import {
   Delete,
   HttpStatus,
   UseGuards,
-  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -17,15 +17,18 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { ManagersService } from './managers.service';
 import { CreateManagerDto } from './dto/create-manager.dto';
 import { UpdateManagerDto } from './dto/update-manager.dto';
+import { QueryManagerDto } from './dto/query-manager.dto';
 import { Manager } from './entities/manager.entity';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('managers')
+@ApiTags('管理员(managers)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles('admin')
@@ -46,14 +49,25 @@ export class ManagersController {
   }
 
   @Get()
-  @ApiOperation({ summary: '获取所有管理员' })
+  @ApiOperation({ summary: '分页查询管理员列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取成功',
-    type: [Manager],
   })
-  async findAll(): Promise<Manager[]> {
-    return this.managersService.findAll();
+  async findAll(@Query() query: QueryManagerDto) {
+    return this.managersService.findAll(query);
   }
 
   @Get(':managerId')
@@ -66,7 +80,6 @@ export class ManagersController {
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '管理员不存在' })
   async findOne(@Param('managerId') managerId: string): Promise<Manager> {
-    console.log('managerId:', managerId);
     return this.managersService.findOne(managerId);
   }
 

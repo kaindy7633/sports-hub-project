@@ -25,8 +25,9 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { QueryActivityDto } from './dto/query-activity.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('activities')
+@ApiTags('活动(activities)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('activities')
@@ -55,7 +56,15 @@ export class ActivitiesController {
     description: '返回活动列表',
   })
   findAll(@Query() query: QueryActivityDto) {
-    return this.activitiesService.findAll(query);
+    // 确保使用默认值
+    const pageNum = query.pageNum || PAGINATION.DEFAULT_PAGE_NUM;
+    const pageSize = query.pageSize || PAGINATION.DEFAULT_PAGE_SIZE;
+
+    return this.activitiesService.findAll({
+      ...query,
+      pageNum,
+      pageSize,
+    });
   }
 
   @Get('my')
@@ -134,7 +143,7 @@ export class ActivitiesController {
   @Post(':activityId/join')
   @ApiOperation({ summary: '参加活动' })
   @ApiParam({ name: 'activityId', description: '业务活动ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: '成功参加活动' })
+  @ApiResponse({ status: HttpStatus.OK, description: '成功参加会议' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '活动不存在' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,

@@ -15,6 +15,7 @@ import { ResourceNotFoundException } from '../../common/exceptions/resource-not-
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { InsufficientPermissionException } from '../../common/exceptions/insufficient-permission.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION } from '../../common/constants';
 
 @Injectable()
 export class ActivitiesService {
@@ -93,8 +94,8 @@ export class ActivitiesService {
         start_time_from,
         start_time_to,
         status,
-        pageNum = 1,
-        pageSize = 10,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
       } = queryParams;
 
       const skip = (pageNum - 1) * pageSize;
@@ -411,7 +412,7 @@ export class ActivitiesService {
       activity.current_participants += 1;
       await this.activityRepository.save(activity);
 
-      return { message: '成功参加活动' };
+      return { message: '成功参加会议' };
     } catch (error) {
       if (
         error instanceof ResourceNotFoundException ||
@@ -419,7 +420,7 @@ export class ActivitiesService {
       ) {
         throw error;
       }
-      this.logger.error(`参加活动失败: ${error.message}`, error.stack);
+      this.logger.error(`参加会议失败: ${error.message}`, error.stack);
       throw new DatabaseException('参加', '活动', error);
     }
   }

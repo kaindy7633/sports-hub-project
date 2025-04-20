@@ -17,6 +17,11 @@ import { UserRoleDto, BatchAssignRoleDto } from './dto/assign-role.dto';
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import {
+  PAGINATION,
+  STATUS,
+  ROLES as ROLE_CONSTANTS,
+} from '../../common/constants';
 
 @Injectable()
 export class RolesService {
@@ -76,7 +81,14 @@ export class RolesService {
    */
   async findAll(queryParams: QueryRoleDto = {}) {
     try {
-      const { name, code, status, pageNum = 1, pageSize = 10 } = queryParams;
+      const {
+        name,
+        code,
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
+        status = STATUS.ENABLED,
+      } = queryParams;
+
       const skip = (pageNum - 1) * pageSize;
 
       // 构建查询条件

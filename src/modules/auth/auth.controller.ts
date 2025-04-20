@@ -10,7 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 
-@ApiTags('auth')
+@ApiTags('鉴权(auth)')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

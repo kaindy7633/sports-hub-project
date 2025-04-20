@@ -1,5 +1,5 @@
 // src/modules/users/users.service.ts
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -8,10 +8,12 @@ import { Role } from '../roles/entities/role.entity';
 import { UserRole } from './entities/user-role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { QueryUserDto } from './dto/query-user.dto'; // 添加导入 QueryUserDto
 import * as crypto from 'crypto';
 import { ResourceNotFoundException } from '../../common/exceptions/resource-not-found.exception';
 import { DatabaseException } from '../../common/exceptions/database.exception';
 import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { PAGINATION, STATUS, ROLES } from '../../common/constants';
 
 @Injectable()
 export class UsersService {
@@ -67,21 +69,18 @@ export class UsersService {
    * @param params 查询参数，包含分页信息和筛选条件
    * @returns 分页用户列表
    */
-  async findAll(params?: {
-    pageNum: number;
-    pageSize: number;
-    username?: string;
-    phone?: string;
-    email?: string;
-  }) {
+  // 只修改 findAll 方法部分
+  async findAll(queryParams: QueryUserDto = {}) {
     try {
-      if (!params) {
-        return await this.userRepository.find({
-          relations: ['auths', 'roles'],
-        });
-      }
+      const {
+        pageNum = PAGINATION.DEFAULT_PAGE_NUM,
+        pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
+        status = STATUS.ENABLED,
+        username,
+        phone,
+        email,
+      } = queryParams;
 
-      const { pageNum, pageSize, username, phone, email } = params;
       const skip = (pageNum - 1) * pageSize;
 
       // 构建查询条件
@@ -89,6 +88,7 @@ export class UsersService {
       if (username) whereConditions.username = username;
       if (phone) whereConditions.phone = phone;
       if (email) whereConditions.email = email;
+      if (status !== undefined) whereConditions.status = status;
 
       // 查询总数
       const total = await this.userRepository.count({ where: whereConditions });
@@ -99,6 +99,9 @@ export class UsersService {
         relations: ['auths', 'roles'],
         skip,
         take: pageSize,
+        order: {
+          created_at: 'DESC',
+        },
       });
 
       return {

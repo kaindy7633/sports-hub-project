@@ -25,8 +25,9 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 import { QueryCommentDto } from './dto/query-comment.dto';
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
+import { PAGINATION } from '../../common/constants';
 
-@ApiTags('comments')
+@ApiTags('评论(comments)')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('comments')
@@ -48,6 +49,18 @@ export class CommentsController {
 
   @Get()
   @ApiOperation({ summary: '分页查询评论列表' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回评论列表',
@@ -59,6 +72,18 @@ export class CommentsController {
   @Get('activity/:activityId')
   @ApiOperation({ summary: '获取活动的评论列表' })
   @ApiParam({ name: 'activityId', description: '业务活动ID' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回活动评论列表',
@@ -74,6 +99,18 @@ export class CommentsController {
 
   @Get('user')
   @ApiOperation({ summary: '获取我发表的评论' })
+  @ApiQuery({
+    name: 'pageNum',
+    description: '页码',
+    example: PAGINATION.DEFAULT_PAGE_NUM,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    description: '每页条数',
+    example: PAGINATION.DEFAULT_PAGE_SIZE,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '返回我的评论列表',
