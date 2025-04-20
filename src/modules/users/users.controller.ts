@@ -58,13 +58,12 @@ export class UsersController {
       throw new ForbiddenException('只有管理员可以创建用户');
     }
 
-    this.logger.log(
-      `管理员 ${currentUser.username} 创建新用户: ${createUserDto.username}`,
-    );
     return await this.usersService.create(createUserDto);
   }
 
   @Get()
+  @UseGuards(RoleGuard)
+  @Roles('admin', 'manager')
   @ApiOperation({ summary: '分页查询用户列表' })
   @ApiResponse({ status: 200, description: '返回分页用户列表' })
   @ApiQuery({
@@ -119,6 +118,8 @@ export class UsersController {
   }
 
   @Get('list')
+  @UseGuards(RoleGuard)
+  @Roles('admin', 'manager')
   @ApiOperation({ summary: '获取所有用户列表' })
   @ApiResponse({ status: 200, description: '返回所有用户列表' })
   @ApiQuery({ name: 'username', description: '用户名', required: false })
