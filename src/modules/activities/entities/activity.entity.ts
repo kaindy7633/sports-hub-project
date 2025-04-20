@@ -14,6 +14,9 @@ import { BigIntTransformer } from '../../../common/transformers/bigint.transform
 import { ActivityType } from '../../activity_types/entities/activity-types.entity';
 import { Venue } from '../../venues/entities/venues.entity';
 import { Comment } from '../../comments/entities/comment.entity';
+// 导入 ActivityTeam
+import { ActivityTeam } from './activity-team.entity';
+import { Team } from '../../teams/entities/team.entity';
 
 @Entity('activities')
 export class Activity {
@@ -44,9 +47,9 @@ export class Activity {
   @Column({ type: 'bigint' })
   creator_id: bigint;
 
-  @ApiProperty({ description: '团队ID', example: '1', required: false })
-  @Column({ type: 'bigint', nullable: true })
-  team_id: bigint;
+  // @ApiProperty({ description: '团队ID', example: '1', required: false })
+  // @Column({ type: 'bigint', nullable: true })
+  // team_id: bigint;
 
   @ApiProperty({
     description: '活动描述',
@@ -111,4 +114,18 @@ export class Activity {
   // 评论关联
   @OneToMany(() => Comment, (comment) => comment.activity)
   comments: Comment[];
+
+  // 添加新的多对多关联
+  @ApiProperty({
+    description: '活动关联的团队',
+    type: () => ActivityTeam,
+    isArray: true,
+  })
+  @OneToMany(() => ActivityTeam, (activityTeam) => activityTeam.activity)
+  teamActivities: ActivityTeam[];
+
+  // 添加一个便捷方法来获取所有关联的团队
+  get teams(): Team[] {
+    return this.teamActivities?.map((activityTeam) => activityTeam.team) || [];
+  }
 }

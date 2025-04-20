@@ -10,6 +10,9 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { UserTeam } from './user-team.entity';
 import { BigIntTransformer } from '../../../common/transformers/bigint.transformer';
+
+// 导入 ActivityTeam
+import { ActivityTeam } from '../../activities/entities/activity-team.entity';
 import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity('teams')
@@ -79,6 +82,22 @@ export class Team {
   userTeams: UserTeam[];
 
   // 关联活动
-  @OneToMany(() => Activity, (activity) => activity.team)
-  activities: Activity[];
+  // @OneToMany(() => Activity, (activity) => activity.team)
+  // activities: Activity[];
+
+  // 添加新的多对多关联
+  @ApiProperty({
+    description: '团队参与的活动关联',
+    type: () => ActivityTeam,
+    isArray: true,
+  })
+  @OneToMany(() => ActivityTeam, (activityTeam) => activityTeam.team)
+  activityTeams: ActivityTeam[];
+
+  // 添加一个便捷方法来获取所有关联的活动
+  get activities(): Activity[] {
+    return (
+      this.activityTeams?.map((activityTeam) => activityTeam.activity) || []
+    );
+  }
 }
