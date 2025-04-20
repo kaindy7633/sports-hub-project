@@ -33,6 +33,32 @@ export class UsersService {
   ) {}
 
   /**
+   * 判断用户是否为管理员
+   * @param user 用户对象
+   * @returns 是否为管理员
+   */
+  isAdmin(user: User): boolean {
+    // 检查用户是否有管理员角色
+    if (!user || !user.roles) {
+      return false;
+    }
+
+    // 方法1: 如果用户角色已经加载并包含角色详情
+    if ((user as any).roleDetails) {
+      return (user as any).roleDetails.some(
+        (role) => role.code === 'admin' || role.code === 'super_admin',
+      );
+    }
+
+    // 方法2: 通过角色ID判断
+    return user.roles.some((userRole) => {
+      // 这里需要根据你的角色ID设计来判断
+      // 假设角色ID 1是管理员，2是超级管理员
+      return [1n, 2n].includes(userRole.role_id);
+    });
+  }
+
+  /**
    * 创建用户
    * @param createUserDto
    * @returns
@@ -215,6 +241,17 @@ export class UsersService {
    */
   async findOne(userId: string): Promise<User> {
     try {
+      // 校验 userId 参数
+      if (
+        !userId ||
+        userId === '0' ||
+        userId === 'undefined' ||
+        userId === 'null'
+      ) {
+        this.logger.error(`查询用户详情失败: 无效的用户ID ${userId}`);
+        throw new ResourceNotFoundException('用户', userId || '未提供ID');
+      }
+
       // 直接使用原始SQL查询以避免类型转换问题，明确指定字段
       const [user] = await this.userRepository.query(
         `SELECT id, user_id, username, nick_name, real_name, avatar, email, phone, 

@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,6 +28,9 @@ import {
 import { JwtAuthGuard } from '../../core/token/jwt-auth.guard';
 import { RoleGuard, Roles } from '../../core/token/role.guard';
 import { PAGINATION } from '../../common/constants';
+import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { User } from './entities/user.entity';
+import { ForbiddenException } from '@nestjs/common';
 
 @ApiTags('用户(users)')
 @ApiBearerAuth('JWT-auth')
@@ -43,7 +47,20 @@ export class UsersController {
   @ApiOperation({ summary: '创建新用户' })
   @ApiResponse({ status: 201, description: '用户创建成功' })
   @ApiResponse({ status: 400, description: '无效的请求数据' })
-  async create(@Body() createUserDto: CreateUserDto) {
+  @ApiResponse({ status: 403, description: '权限不足，仅管理员可创建用户' })
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    // 检查当前用户是否有管理员权限
+    if (!this.usersService.isAdmin(currentUser)) {
+      this.logger.warn(`用户 ${currentUser.username} 尝试创建用户但权限不足`);
+      throw new ForbiddenException('只有管理员可以创建用户');
+    }
+
+    this.logger.log(
+      `管理员 ${currentUser.username} 创建新用户: ${createUserDto.username}`,
+    );
     return await this.usersService.create(createUserDto);
   }
 
@@ -124,10 +141,25 @@ export class UsersController {
 
   @Get(':userId')
   @ApiOperation({ summary: '根据业务ID获取用户' })
-  @ApiParam({ name: 'userId', description: '业务用户ID' })
+  @ApiParam({ name: 'userId', description: '业务用户ID', required: true })
   @ApiResponse({ status: 200, description: '返回指定用户' })
   @ApiResponse({ status: 404, description: '用户不存在' })
-  async findOne(@Param('userId', ParseIntPipe) userId: string) {
+  @ApiResponse({ status: 400, description: '无效的用户ID' })
+  async findOne(@Param('userId') userId: string) {
+    // 校验 userId 是否为有效值
+    if (!userId || userId.trim() === '') {
+      this.logger.error('获取用户详情失败: 未提供有效的用户ID');
+      throw new BadRequestException('必须提供有效的用户ID');
+    }
+
+    // 尝试将 userId 转换为数字，确保是有效的数字ID
+    const userIdNum = Number(userId);
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+      this.logger.error(`获取用户详情失败: 无效的用户ID格式 ${userId}`);
+      throw new BadRequestException('用户ID必须是有效的正整数');
+    }
+
+    this.logger.log(`查询用户详情，用户ID: ${userId}`);
     return await this.usersService.findOne(userId);
   }
 
@@ -136,10 +168,32 @@ export class UsersController {
   @ApiParam({ name: 'userId', description: '业务用户ID' })
   @ApiResponse({ status: 200, description: '用户更新成功' })
   @ApiResponse({ status: 404, description: '用户不存在' })
+  @ApiResponse({
+    status: 403,
+    description: '权限不足，只能更新自己的账号或需要管理员权限',
+  })
   async update(
-    @Param('userId', ParseIntPipe) userId: string,
+    @Param('userId') userId: string,
     @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() currentUser: User,
   ) {
+    // 检查权限：用户可以更新自己的账号，或者管理员可以更新任何账号
+    const isSelfUpdate = currentUser.user_id === userId;
+    const isAdmin = this.usersService.isAdmin(currentUser);
+
+    if (!isSelfUpdate && !isAdmin) {
+      this.logger.warn(
+        `用户 ${currentUser.username} 尝试更新其他用户(${userId})但权限不足`,
+      );
+      throw new ForbiddenException('您只能更新自己的账号，或需要管理员权限');
+    }
+
+    if (isSelfUpdate) {
+      this.logger.log(`用户 ${currentUser.username} 更新自己的账号信息`);
+    } else {
+      this.logger.log(`管理员 ${currentUser.username} 更新用户 ${userId}`);
+    }
+
     return await this.usersService.update(userId, updateUserDto);
   }
 
@@ -148,7 +202,31 @@ export class UsersController {
   @ApiParam({ name: 'userId', description: '业务用户ID' })
   @ApiResponse({ status: 200, description: '用户删除成功' })
   @ApiResponse({ status: 404, description: '用户不存在' })
-  async remove(@Param('userId', ParseIntPipe) userId: string) {
+  @ApiResponse({
+    status: 403,
+    description: '权限不足，只能删除自己的账号或需要管理员权限',
+  })
+  async remove(
+    @Param('userId') userId: string,
+    @CurrentUser() currentUser: User,
+  ) {
+    // 检查权限：用户可以删除自己的账号，或者管理员可以删除任何账号
+    const isSelfDelete = currentUser.user_id === userId;
+    const isAdmin = this.usersService.isAdmin(currentUser);
+
+    if (!isSelfDelete && !isAdmin) {
+      this.logger.warn(
+        `用户 ${currentUser.username} 尝试删除其他用户(${userId})但权限不足`,
+      );
+      throw new ForbiddenException('您只能删除自己的账号，或需要管理员权限');
+    }
+
+    if (isSelfDelete) {
+      this.logger.log(`用户 ${currentUser.username} 注销自己的账号`);
+    } else {
+      this.logger.log(`管理员 ${currentUser.username} 删除用户 ${userId}`);
+    }
+
     return await this.usersService.remove(userId);
   }
 
