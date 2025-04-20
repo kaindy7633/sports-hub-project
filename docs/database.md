@@ -228,3 +228,28 @@
 | created_at | timestamp | - | 否 | CURRENT_TIMESTAMP | - | 创建时间 |
 | updated_at | timestamp | - | 否 | CURRENT_TIMESTAMP | - | 更新时间 |
 | deleted_at | timestamp | - | 是 | null | - | 删除时间 |
+
+### 用户-团队关联表 (user_team)
+
+| 字段名      | 类型      | 约束                 | 说明                     |
+|------------|-----------|---------------------|--------------------------|
+| user_id    | bigint    | NOT NULL            | 用户ID，关联users表的id    |
+| team_id    | bigint    | NOT NULL            | 团队ID，关联teams表的id    |
+| role       | varchar   | NULL                | 用户在团队中的角色          |
+| joined_at  | timestamp | NOT NULL DEFAULT NOW() | 用户加入团队的时间      |
+| created_at | timestamp | NOT NULL DEFAULT NOW() | 创建时间                |
+| updated_at | timestamp | NOT NULL DEFAULT NOW() | 更新时间                |
+
+**主键**: (user_id, team_id)  
+
+**索引**:  
+
+- idx_user_team_user (user_id)  
+- idx_user_team_team (team_id)  
+
+**外键约束**:  
+
+- user_id 关联 users(id) ON DELETE CASCADE  
+- team_id 关联 teams(id) ON DELETE CASCADE  
+
+**说明**: 用户-团队多对多关系的中间表，记录用户与团队的关联关系，以及用户在团队中的角色和加入时间。

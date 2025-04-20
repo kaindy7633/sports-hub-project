@@ -468,3 +468,20 @@ CREATE TRIGGER update_comments_updated_at
 BEFORE UPDATE ON comments
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();
+
+-- 创建用户-团队中间表
+CREATE TABLE user_team (
+    user_id bigint NOT NULL,
+    team_id bigint NOT NULL,
+    role varchar(50) NULL,
+    joined_at timestamp NOT NULL DEFAULT NOW(),
+    created_at timestamp NOT NULL DEFAULT NOW(),
+    updated_at timestamp NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, team_id),
+    CONSTRAINT fk_user_team_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_team_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+);
+
+-- 创建索引
+CREATE INDEX idx_user_team_user ON user_team(user_id);
+CREATE INDEX idx_user_team_team ON user_team(team_id);
