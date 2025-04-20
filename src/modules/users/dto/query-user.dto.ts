@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt, Min, IsEmail } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PAGINATION } from '../../../common/constants';
 
@@ -16,7 +16,7 @@ export class QueryUserDto {
 
   @ApiProperty({ description: '邮箱', required: false })
   @IsOptional()
-  @IsEmail()
+  @IsString() // 将 IsEmail 改为 IsString，允许任何字符串格式
   email?: string;
 
   @ApiProperty({ description: '状态：0-禁用，1-正常', required: false })

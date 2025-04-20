@@ -1,7 +1,7 @@
 // src/modules/users/users.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserAuth } from './entities/user-auth.entity';
 import { Role } from '../roles/entities/role.entity';
@@ -19,9 +19,10 @@ import { PAGINATION, STATUS, ROLES } from '../../common/constants';
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
+  // 修改 userRepository 的访问修饰符
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    public readonly userRepository: Repository<User>, // 从 private 改为 public
     @InjectRepository(UserAuth)
     private readonly userAuthRepository: Repository<UserAuth>,
     @InjectRepository(Role)
@@ -69,40 +70,113 @@ export class UsersService {
    * @param params 查询参数，包含分页信息和筛选条件
    * @returns 分页用户列表
    */
-  // 只修改 findAll 方法部分
+  /**
+   * 分页查询用户列表
+   * @param params 查询参数，包含分页信息和筛选条件
+   * @returns 分页用户列表
+   */
   async findAll(queryParams: QueryUserDto = {}) {
     try {
       const {
         pageNum = PAGINATION.DEFAULT_PAGE_NUM,
         pageSize = PAGINATION.DEFAULT_PAGE_SIZE,
-        status = STATUS.ENABLED,
         username,
         phone,
         email,
+        status,
       } = queryParams;
 
       const skip = (pageNum - 1) * pageSize;
 
-      // 构建查询条件
-      const whereConditions: any = {};
-      if (username) whereConditions.username = username;
-      if (phone) whereConditions.phone = phone;
-      if (email) whereConditions.email = email;
-      if (status !== undefined) whereConditions.status = status;
+      // 先使用简单的原生SQL查询验证数据存在，排除敏感字段
+      const rawUsers = await this.userRepository.query(
+        `SELECT id, user_id, username, nick_name, real_name, avatar, email, phone, 
+        emergency_contact, address, gender, birthday, status, created_at, updated_at 
+        FROM users WHERE deleted_at IS NULL LIMIT 5`,
+      );
+      this.logger.log(`原生SQL查询到 ${rawUsers.length} 条记录`);
+
+      // 使用简化的查询方式
+      const whereConditions: any = { deleted_at: null };
+
+      if (username) {
+        whereConditions.username = Like(`%${username}%`);
+      }
+      if (phone) {
+        whereConditions.phone = Like(`%${phone}%`);
+      }
+      if (email) {
+        whereConditions.email = Like(`%${email}%`);
+      }
+      if (status !== undefined && status !== null) {
+        whereConditions.status = status;
+      }
 
       // 查询总数
       const total = await this.userRepository.count({ where: whereConditions });
 
-      // 查询数据
+      // 查询数据 - 明确指定要查询的字段，排除敏感信息
       const users = await this.userRepository.find({
+        select: [
+          'id',
+          'user_id',
+          'username',
+          'nick_name',
+          'real_name',
+          'avatar',
+          'email',
+          'phone',
+          'emergency_contact',
+          'address',
+          'gender',
+          'birthday',
+          'status',
+          'created_at',
+          'updated_at',
+        ],
         where: whereConditions,
-        relations: ['auths', 'roles'],
         skip,
         take: pageSize,
         order: {
           created_at: 'DESC',
         },
       });
+
+      // 如果简化查询能找到数据，再尝试加载关联
+      if (users.length > 0) {
+        // 手动加载关联数据
+        for (const user of users) {
+          // 查询用户认证信息，排除敏感字段
+          user.auths = await this.userAuthRepository.find({
+            select: [
+              'id',
+              'identity_type',
+              'identifier',
+              'created_at',
+              'updated_at',
+            ],
+            where: { user_id: user.id },
+          });
+
+          // 加载用户角色关系
+          const userRoles = await this.userRoleRepository.find({
+            where: { user_id: user.id },
+          });
+
+          // 修复第二个错误：正确处理角色关系
+          if (userRoles.length > 0) {
+            const roleIds = userRoles.map((ur) => ur.role_id);
+            // 查询角色信息
+            const roles = await this.roleRepository.findByIds(roleIds);
+            // 保持 user.roles 类型为 UserRole[]
+            user.roles = userRoles;
+            // 可以添加一个自定义属性存储角色详情
+            (user as any).roleDetails = roles;
+          } else {
+            user.roles = [];
+          }
+        }
+      }
 
       return {
         list: users,
@@ -141,9 +215,11 @@ export class UsersService {
    */
   async findOne(userId: string): Promise<User> {
     try {
-      // 直接使用原始SQL查询以避免类型转换问题
+      // 直接使用原始SQL查询以避免类型转换问题，明确指定字段
       const [user] = await this.userRepository.query(
-        'SELECT * FROM users WHERE user_id = $1 AND deleted_at IS NULL',
+        `SELECT id, user_id, username, nick_name, real_name, avatar, email, phone, 
+        emergency_contact, address, gender, birthday, status, created_at, updated_at 
+        FROM users WHERE user_id = $1 AND deleted_at IS NULL`,
         [userId],
       );
 
@@ -369,5 +445,15 @@ export class UsersService {
       .pbkdf2Sync(plainPassword, salt, 1000, 64, 'sha512')
       .toString('hex');
     return hash === hashedPassword;
+  }
+
+  // 添加一个临时方法来验证数据
+  async checkUsersExist() {
+    const rawUsers = await this.userRepository.query(
+      `SELECT id, user_id, username, nick_name, real_name, avatar, email, phone, 
+      status, created_at FROM users LIMIT 10`,
+    );
+    this.logger.log(`原生SQL查询结果: ${JSON.stringify(rawUsers)}`);
+    return rawUsers;
   }
 }

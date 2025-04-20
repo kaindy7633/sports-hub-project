@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -31,8 +32,11 @@ import { PAGINATION } from '../../common/constants';
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles('admin', 'manager')
+// 在控制器类中添加 logger 实例
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
@@ -62,7 +66,39 @@ export class UsersController {
   @ApiQuery({ name: 'phone', description: '手机号', required: false })
   @ApiQuery({ name: 'email', description: '邮箱', required: false })
   async findAll(@Query() query: QueryUserDto) {
-    return await this.usersService.findAll(query);
+    // 过滤掉空字符串参数
+    const filteredQuery: QueryUserDto = {};
+
+    // 只保留有实际值的参数
+    Object.keys(query).forEach((key) => {
+      // 特殊处理 status 参数
+      if (key === 'status') {
+        // 只有当 status 参数明确存在于 URL 中且不为空字符串时才添加
+        if (
+          query.status !== undefined &&
+          typeof query.status !== 'string' &&
+          query.status !== null
+        ) {
+          // 将字符串转换为数字
+          const statusValue = Number(query.status);
+          // 只有当 status 是 1 时才添加（查询正常状态的用户）
+          if (statusValue === 1) {
+            filteredQuery.status = statusValue;
+          }
+          // 如果需要查询所有状态的用户，则不添加 status 条件
+        }
+      } else if (
+        query[key] !== '' &&
+        query[key] !== undefined &&
+        query[key] !== null
+      ) {
+        filteredQuery[key] = query[key];
+      }
+    });
+
+    this.logger.log(`过滤后的查询参数: ${JSON.stringify(filteredQuery)}`);
+
+    return await this.usersService.findAll(filteredQuery);
   }
 
   @Get('list')
@@ -72,8 +108,18 @@ export class UsersController {
   @ApiQuery({ name: 'phone', description: '手机号', required: false })
   @ApiQuery({ name: 'email', description: '邮箱', required: false })
   async findAllList(@Query() query: Partial<QueryUserDto>) {
-    const { username, phone, email } = query;
-    return await this.usersService.findAllList({ username, phone, email });
+    // 过滤掉空字符串参数
+    const filteredQuery: Partial<QueryUserDto> = {};
+
+    // 只保留有实际值的参数
+    if (query.username && query.username !== '')
+      filteredQuery.username = query.username;
+    if (query.phone && query.phone !== '') filteredQuery.phone = query.phone;
+    if (query.email && query.email !== '') filteredQuery.email = query.email;
+
+    this.logger.log(`过滤后的列表查询参数: ${JSON.stringify(filteredQuery)}`);
+
+    return await this.usersService.findAllList(filteredQuery);
   }
 
   @Get(':userId')
@@ -120,5 +166,16 @@ export class UsersController {
     },
   ) {
     return await this.usersService.addUserAuth(authData);
+  }
+
+  // 在 UsersController 类中添加一个临时的端点
+  @Get('debug/raw')
+  @ApiOperation({ summary: '直接查询用户数据（调试用）' })
+  async getRawUsers() {
+    // 直接使用原生SQL查询
+    const rawUsers = await this.usersService.userRepository.query(
+      'SELECT * FROM users WHERE deleted_at IS NULL LIMIT 10',
+    );
+    return { count: rawUsers.length, data: rawUsers };
   }
 }
