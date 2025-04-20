@@ -38,3 +38,7 @@ export const ACTIVITY_STATUS = {
 };
 
 // 其他可能需要的常量...
+export const JWT = {
+  SECRET: process.env.JWT_SECRET || 'your-secret-key',
+  EXPIRES_IN: '24h', // 修改为 24 小时
+};

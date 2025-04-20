@@ -62,4 +62,10 @@ export class TokenService {
     // 生成新令牌
     return this.generateToken(payload as TokenPayload);
   }
+
+  // 修改 JWT 签名选项，将过期时间设置为 24 小时
+  private readonly jwtSignOptions: jwt.SignOptions = {
+    secret: process.env.JWT_SECRET || 'your-secret-key',
+    expiresIn: '24h', // 修改为 24 小时
+  };
 }
