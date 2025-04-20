@@ -1,27 +1,26 @@
 // src/modules/activities/activities.module.ts
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivitiesService } from './activities.service';
 import { ActivitiesController } from './activities.controller';
 import { Activity } from './entities/activity.entity';
 import { Team } from '../teams/entities/team.entity';
-// 添加 ActivityTeam 实体和服务
 import { ActivityTeam } from './entities/activity-team.entity';
 import { ActivityTeamsService } from './activity-teams.service';
 import { ActivityTeamsController } from './activity-teams.controller';
+import { SnowflakeService } from '../../core/snowflake/snowflake.service';
+import { SnowflakeModule } from '../../core/snowflake/snowflake.module';
+// 导入 TokenModule (包含 TokenService)
+import { TokenModule } from '../../core/token/token.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Activity, Team, ActivityTeam]), // 添加 ActivityTeam
+    TypeOrmModule.forFeature([Activity, Team, ActivityTeam]),
+    SnowflakeModule,
+    TokenModule, // 导入 TokenModule，它应该提供 TokenService
   ],
-  controllers: [
-    ActivitiesController,
-    ActivityTeamsController, // 添加 ActivityTeamsController
-  ],
-  providers: [
-    ActivitiesService,
-    ActivityTeamsService, // 添加 ActivityTeamsService
-  ],
-  exports: [ActivitiesService, ActivityTeamsService], // 导出服务
+  controllers: [ActivitiesController, ActivityTeamsController],
+  providers: [ActivitiesService, ActivityTeamsService],
+  exports: [ActivitiesService, ActivityTeamsService],
 })
 export class ActivitiesModule {}

@@ -74,17 +74,21 @@ export class TeamsService {
 
   async findOne(id: string): Promise<Team> {
     try {
-      const team = await this.teamRepository.findOne({ where: { id } });
+      const team = await this.teamRepository.findOne({
+        where: { team_id: id },
+      });
+
       if (!team) {
         throw new ResourceNotFoundException('团队', id);
       }
+
       return team;
     } catch (error) {
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }
       this.logger.error(`查询团队详情失败: ${error.message}`, error.stack);
-      throw new DatabaseException('查询', '团队详情', error);
+      throw new DatabaseException('查询', '团队', error);
     }
   }
 

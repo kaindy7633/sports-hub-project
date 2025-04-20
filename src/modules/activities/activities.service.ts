@@ -56,9 +56,6 @@ export class ActivitiesService {
       activity.type_id = BigInt(createActivityDto.type_id);
       activity.venue_id = BigInt(createActivityDto.venue_id);
       activity.creator_id = BigInt(creator_id);
-      if (createActivityDto.team_id) {
-        activity.team_id = BigInt(createActivityDto.team_id);
-      }
       activity.description = createActivityDto.description || '';
       activity.start_time = startTime;
       activity.end_time = endTime;
